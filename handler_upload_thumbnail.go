@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 	"mime"
 	"net/http"
 	"os"
@@ -86,8 +85,6 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		videoServerFilePath,
 	)
 	videoRow.ThumbnailURL = &videoUrlFilePath
-
-	log.Print("Debug:", videoUrlFilePath)
 
 	if err := cfg.db.UpdateVideo(videoRow); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Couldn't update video in database", err)
