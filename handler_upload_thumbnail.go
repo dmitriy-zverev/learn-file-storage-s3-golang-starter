@@ -1,10 +1,14 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io"
+	"log"
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
 	"github.com/google/uuid"
@@ -46,13 +50,6 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 	}
 	defer file.Close()
 
-	mediaType := fileHandler.Header.Get("Content-Type")
-	imageData, err := io.ReadAll(file)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Couldn't parse image data from file", err)
-		return
-	}
-
 	videoRow, err := cfg.db.GetVideo(videoID)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Couldn't get video from database", err)
@@ -64,14 +61,33 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	base64ImageData := base64.StdEncoding.EncodeToString(imageData)
-	dataUrl := fmt.Sprintf(
-		"data:%s;base64,%s",
-		mediaType,
-		base64ImageData,
-	)
+	mediaType, _, err := mime.ParseMediaType(fileHandler.Header.Get("Content-Type"))
+	if mediaType != "image/jpeg" && mediaType != "image/png" {
+		respondWithError(w, http.StatusBadRequest, "Couldn't parse non image file type", err)
+		return
+	}
 
-	videoRow.ThumbnailURL = &dataUrl
+	fileExtension := "." + strings.Split(mediaType, "/")[1]
+	videoServerFilePath := filepath.Join(cfg.assetsRoot, videoIDString+fileExtension)
+	serverVideoFile, err := os.Create(videoServerFilePath)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Couldn't create file on server", err)
+		return
+	}
+
+	if _, err := io.Copy(serverVideoFile, file); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Couldn't copy file to server", err)
+		return
+	}
+
+	videoUrlFilePath := fmt.Sprintf(
+		"http://localhost:%s/%s",
+		cfg.port,
+		videoServerFilePath,
+	)
+	videoRow.ThumbnailURL = &videoUrlFilePath
+
+	log.Print("Debug:", videoUrlFilePath)
 
 	if err := cfg.db.UpdateVideo(videoRow); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Couldn't update video in database", err)
