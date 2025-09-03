@@ -41,8 +41,8 @@ The goal with Tubely is to provide a complete example of a production-ready Go w
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/dmitriy-zverev/learn-file-storage-s3-golang-starter.git
-cd learn-file-storage-s3-golang-starter
+git clone https://github.com/dmitriy-zverev/tubely.git
+cd tubely
 ```
 
 2. Install dependencies:
