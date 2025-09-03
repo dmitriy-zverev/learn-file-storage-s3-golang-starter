@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 func (cfg apiConfig) ensureAssetsDir() error {
@@ -56,4 +57,24 @@ func getVideoAspectRatio(filePath string) (string, error) {
 	}
 
 	return "other", nil
+}
+
+func processVideoForFastStart(filePath string) (string, error) {
+	splittedFilePath := strings.Split(filePath, ".")
+	outputPath := splittedFilePath[0] + ".processing." + splittedFilePath[1]
+
+	cmd := exec.Command(
+		"ffmpeg",
+		"-i", filePath,
+		"-c", "copy",
+		"-movflags", "faststart",
+		"-f", "mp4",
+		outputPath,
+	)
+
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+
+	return outputPath, nil
 }

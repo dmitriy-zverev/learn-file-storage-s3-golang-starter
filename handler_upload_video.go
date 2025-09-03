@@ -108,12 +108,26 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		fullObjectPath = "other/" + randFileName
 	}
 
+	processedUploadFilePath, err := processVideoForFastStart(tmpFile.Name())
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Couldn't add fast start to video file", err)
+		return
+	}
+
+	uploadFile, err := os.Open(processedUploadFilePath)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Couldn't open processed video file", err)
+		return
+	}
+	defer uploadFile.Close()
+	defer os.Remove(processedUploadFilePath)
+
 	if _, err := cfg.s3Client.PutObject(
 		context.TODO(),
 		&s3.PutObjectInput{
 			Bucket:      &cfg.s3Bucket,
 			Key:         &fullObjectPath,
-			Body:        tmpFile,
+			Body:        uploadFile,
 			ContentType: &mediaType,
 		},
 	); err != nil {
