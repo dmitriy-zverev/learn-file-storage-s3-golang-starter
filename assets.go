@@ -2,11 +2,16 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"math"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
+
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/bootdotdev/tubely/internal/database"
 )
 
 func (cfg apiConfig) ensureAssetsDir() error {
@@ -14,6 +19,30 @@ func (cfg apiConfig) ensureAssetsDir() error {
 		return os.Mkdir(cfg.assetsRoot, 0755)
 	}
 	return nil
+}
+
+func (cfg *apiConfig) dbVideoToSignedVideo(video database.Video) (database.Video, error) {
+	if video.VideoURL == nil {
+		return video, nil
+	}
+
+	splittedVideoURL := strings.Split(*video.VideoURL, ",")
+	bucket := splittedVideoURL[0]
+	key := splittedVideoURL[1]
+
+	presignedURL, err := generatePresignedURL(
+		cfg.s3Client,
+		bucket,
+		key,
+		time.Hour,
+	)
+	if err != nil {
+		return database.Video{}, nil
+	}
+
+	video.VideoURL = &presignedURL
+
+	return video, nil
 }
 
 func getVideoAspectRatio(filePath string) (string, error) {
@@ -77,4 +106,21 @@ func processVideoForFastStart(filePath string) (string, error) {
 	}
 
 	return outputPath, nil
+}
+
+func generatePresignedURL(s3Client *s3.Client, bucket, key string, expireTime time.Duration) (string, error) {
+	s3PresignClient := s3.NewPresignClient(s3Client)
+	presignHttpReq, err := s3PresignClient.PresignGetObject(
+		context.TODO(),
+		&s3.GetObjectInput{
+			Bucket: &bucket,
+			Key:    &key,
+		},
+		s3.WithPresignExpires(expireTime),
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return presignHttpReq.URL, nil
 }

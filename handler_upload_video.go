@@ -11,7 +11,7 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
+	"github.com/bootdotdev/tubely/internal/auth"
 	"github.com/google/uuid"
 )
 
@@ -136,7 +136,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 	}
 
 	videoUrlFilePath := fmt.Sprintf(
-		"https://storage.yandexcloud.net/%s/%s",
+		"%s,%s",
 		cfg.s3Bucket,
 		fullObjectPath,
 	)
@@ -147,5 +147,11 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, videoRow)
+	signedVideo, err := cfg.dbVideoToSignedVideo(videoRow)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Couldn't presign video", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, signedVideo)
 }
