@@ -200,15 +200,21 @@ tubely/
 - `/app/*` - Frontend web application
 - `/assets/*` - Uploaded video and thumbnail files
 
-## 🔒 Authentication
+## 🔒 Authentication & Security
 
-Tubely uses JWT (JSON Web Tokens) for authentication. After logging in, include the token in the Authorization header:
+Tubely implements comprehensive security features:
 
-```
-Authorization: Bearer YOUR_JWT_TOKEN
-```
+### JWT Authentication
+- Uses JWT (JSON Web Tokens) for stateless authentication
+- Include the token in the Authorization header: `Authorization: Bearer YOUR_JWT_TOKEN`
+- Refresh tokens supported for maintaining long-term sessions
+- Token revocation functionality for secure logout
 
-Refresh tokens are also supported for maintaining long-term sessions.
+### Video Security
+- **Presigned URLs**: Videos are served through AWS S3 presigned URLs with configurable expiration times (default: 1 hour)
+- **Access Control**: Only authenticated users can access their own videos
+- **Secure Storage**: Videos stored in private S3 buckets, not directly accessible
+- **File Validation**: Strict file type validation for uploads (MP4 only for videos)
 
 ## 🗄️ Database
 
@@ -225,6 +231,7 @@ Tubely includes advanced video processing features:
 - **Aspect Ratio Detection**: Automatically detects and categorizes videos as 16:9 (landscape), 9:16 (portrait), or other ratios
 - **Video Optimization**: Uses FFMPEG to optimize videos for fast streaming with "fast start" processing
 - **Cloud Storage**: Automatically uploads processed videos to AWS S3 with organized folder structure
+- **Presigned URLs**: Generates secure, time-limited URLs for video access using AWS S3 presigned URLs
 - **Thumbnail Support**: Separate thumbnail upload and management system
 - **File Validation**: Ensures only MP4 video files are accepted
 
@@ -266,14 +273,16 @@ The application is designed to be easily deployable to various cloud platforms. 
 
 ## 🛠️ Technologies Used
 
-- **Go** - Programming language
-- **SQLite** - Database
-- **AWS S3** - Cloud storage
-- **FFMPEG** - Video processing
-- **JWT** - Authentication tokens
-- **bcrypt** - Password hashing
-- **UUID** - Unique identifiers
-- **Standard Library** - Minimal external dependencies
+- **Go 1.23** - Programming language
+- **SQLite** - Database with `mattn/go-sqlite3` driver
+- **AWS SDK v2** - Cloud services integration (`aws-sdk-go-v2`)
+- **AWS S3** - Cloud storage with presigned URL support
+- **FFMPEG** - Video processing and metadata extraction
+- **JWT** - Authentication tokens (`golang-jwt/jwt/v5`)
+- **bcrypt** - Secure password hashing (`golang.org/x/crypto`)
+- **UUID** - Unique identifiers (`google/uuid`)
+- **godotenv** - Environment variable management
+- **Standard Library** - Minimal external dependencies for security
 
 ## 💻 What We Built
 
@@ -283,10 +292,18 @@ This implementation extends the original Boot.dev starter with several key enhan
 1. **Complete Video Upload Pipeline**: Full video upload, processing, and storage workflow
 2. **Advanced Video Processing**: FFMPEG integration for video optimization and aspect ratio detection
 3. **Cloud Storage Integration**: AWS S3 upload with organized folder structure
-4. **Thumbnail Management**: Separate thumbnail upload and management system
-5. **User Authentication**: Complete JWT-based authentication with refresh tokens
-6. **Database Management**: SQLite integration with proper data models
-7. **Frontend Interface**: Web application for video management
+4. **Secure Video Access**: AWS S3 presigned URLs for time-limited, secure video access
+5. **Thumbnail Management**: Separate thumbnail upload and management system
+6. **User Authentication**: Complete JWT-based authentication with refresh tokens
+7. **Database Management**: SQLite integration with proper data models
+8. **Frontend Interface**: Web application for video management
+
+### Latest Enhancements (Recent Updates)
+- **🔐 Presigned URL Security**: Implemented AWS S3 presigned URLs for secure video streaming with configurable expiration times
+- **⚡ Fast Start Processing**: Added FFMPEG "fast start" optimization for improved video loading performance
+- **🏗️ Enhanced Architecture**: Improved video URL handling with secure bucket/key storage format
+- **🔄 Token Management**: Enhanced refresh token system with revocation capabilities
+- **📊 Better Error Handling**: Comprehensive error responses across all endpoints
 
 ### Technical Improvements
 1. **Structured Architecture**: Clean separation of concerns with internal packages
